@@ -11,161 +11,118 @@ def random_search(pairs):
     nx_random_graph = nx.erdos_renyi_graph(1559, 0.0337)
     random_graph = nx.to_dict_of_lists(nx_random_graph)
 
-    pair_steps = []
+    pair_steps = 0
 
     for i in range(pairs):
-        start, goal = random.sample(random_graph.keys(), 2)
-        seen_nodes = set()
-        stack = collections.deque()
-        stack.append((start, None))
-        path = []
+        current, goal = random.sample(random_graph.keys(), 2)
 
-        while len(stack) > 0:
-            current_node, current_parent = stack.pop()
-            path.append(current_node)
+        deque = collections.deque()
+        deque.append(current)
+        seen = set()
 
-            if current_node == goal:
-                break
+        while current != goal:
+            current = deque.pop()
 
-            unvisited_nodes = 0
+            if goal in random_graph[current]:
+                current = goal
+            else:
+                deque.extend([neighbour for neighbour in random_graph[current] if neighbour not in seen])
+                for neighbour in random_graph[current]:
+                    seen.add(neighbour)
 
-            for neighbour_node in random_graph[current_node]:
-                if neighbour_node not in seen_nodes:
-                    seen_nodes.add(neighbour_node)
-                    stack.append((neighbour_node, current_node))
+            pair_steps += 1
 
-                if neighbour_node not in path:
-                    unvisited_nodes += 1
+    avg_pair_steps = pair_steps/pairs
 
-            # all neighbours already visited --> move to next node in stack's parent
-            if unvisited_nodes == 0:
-                backtrack_to = stack.pop()
-                path_index = -2
-                backtrack_list = []
-                while not backtrack_to[1] == current_node:
-                    current_node = path[path_index]
-                    backtrack_list.append(current_node)
-                    path_index -= 1
-                path.append(backtrack_list)
-                stack.append(backtrack_to)
-
-        pair_steps.append(len(path))
-
-    return pair_steps
+    return avg_pair_steps
 
 
 def group_search(pairs):
     m, k, p, q = 75, 20, 0.3, 0.033
     nx_group_graph = group_graph_gen.create_group_graph(m, k, p, q)
+    print(nx_group_graph.number_of_nodes())
+    print(nx_group_graph.number_of_edges())
     group_graph = nx.to_dict_of_lists(nx_group_graph)
 
-    pair_steps = []
+    pair_steps = 0
 
-    # Group graph is intra-group dominated
-    if (q * ((m - 1) * k)) > (p * (k - 1)):
+    expected_inter_group_edges = p * k * ((k - 1)/2) * m
+    expected_intra_group_edges = q * m * k * ((m - 1)/2) * k
+
+    if expected_inter_group_edges > expected_intra_group_edges:
         for i in range(pairs):
-            start, goal = random.sample(group_graph.keys(), 2)
-            print(start)
-            print(goal)
-            seen_nodes = set()
-            stack = collections.deque()
-            stack.append((start, None))
-            path = []
-            goal_node_group = goal / k
+            current, goal = random.sample(group_graph.keys(), 2)
+            deque = collections.deque()
+            deque.append(current)
+            seen = set()
+            goal_group = goal // k
 
-            while len(stack) > 0:
-                current_node, current_parent = stack.pop()
-                path.append(current_node)
+            while current != goal:
+                current = deque.pop()
 
-                if current_node == goal:
-                    break
+                if goal in group_graph[current]:
+                    current = goal
+                else:
+                    deque.extend([neighbour for neighbour in group_graph[current] if (neighbour not in seen and not
+                        neighbour // k == goal_group)])
 
-                unvisited_nodes = 0
+                    if len(deque) == 0:
+                        deque.extend([neighbour for neighbour in group_graph[current] if neighbour not in seen])
 
-                for neighbour_node in group_graph[current_node]:
-                    if neighbour_node not in seen_nodes and (neighbour_node / k != goal_node_group):
-                        seen_nodes.add(neighbour_node)
-                        stack.append((neighbour_node, current_node))
+                    for neighbour in group_graph[current]:
+                        seen.add(neighbour)
 
-                    if neighbour_node not in path:
-                        unvisited_nodes += 1
+                pair_steps += 1
 
-                # all neighbours already visited --> move to next node in stack's parent
-                if unvisited_nodes == 0:
-                    for neighbour_node in group_graph[current_node]:
-                        if neighbour_node not in seen_nodes:
-                            seen_nodes.add(neighbour_node)
-                            stack.append((neighbour_node, current_node))
+    else:
+        for i in range(pairs):
+            current, goal = random.sample(group_graph.keys(), 2)
+            deque = collections.deque()
+            deque.append(current)
+            seen = set()
+            goal_group = goal // k
 
-                        if neighbour_node not in path:
-                            unvisited_nodes += 1
+            while current != goal:
+                current = deque.pop()
 
-                    if(unvisited_nodes == 0):
-                        backtrack_to = stack.pop()
-                        path_index = -2
-                        backtrack_list = []
-                        while not backtrack_to[1] == current_node:
-                            current_node = path[path_index]
-                            backtrack_list.append(current_node)
-                            path_index -= 1
-                        path.append(backtrack_list)
-                        stack.append(backtrack_to)
+                if goal in group_graph[current]:
+                    current = goal
+                else:
+                    deque.extend([neighbour for neighbour in group_graph[current] if (neighbour not in seen and
+                        neighbour // k == goal_group)])
 
-            print("completed one")
-            pair_steps.append(len(path))
+                    if len(deque) == 0:
+                        deque.extend([neighbour for neighbour in group_graph[current] if neighbour not in seen])
 
+                    for neighbour in group_graph[current]:
+                        seen.add(neighbour)
 
-    # pair_steps = []
-    #
-    # for i in range(pairs):
-    #     start, goal = random.sample(group_graph.keys(), 2)
-    #     seen_nodes = set()
-    #     q = queue.Queue()
-    #     q.put(start)
-    #     steps = 0
-    #     goal_group = goal/k     # number between 0 and 74 indicating the group of the goal node
-    #
-    #     while not q.empty():
-    #         current_node = q.get()
-    #
-    #         if current_node == goal:
-    #             break
-    #
-    #         neighbour_node_is_goal = False
-    #
-    #         for neighbour_node in group_graph[current_node]:
-    #             if neighbour_node == goal:
-    #                 neighbour_node_is_goal = True
-    #                 steps += 1
-    #                 break
-    #
-    #         if neighbour_node_is_goal:
-    #             break
-    #
-    #         neighbour_node_is_in_goal_group = False
-    #
-    #         for neighbour_node in group_graph[current_node]:
-    #             if neighbour_node/k == goal_group:
-    #                 neighbour_node_is_in_goal_group = True
-    #                 steps += 1
-    #                 q.put(neighbour_node)
-    #                 break
-    #
-    #         if neighbour_node_is_in_goal_group:
-    #             continue
-    #
-    #         # No neighbours have been found in the goal group
-    #
-    #         q.put
-    #
-    # return group_graph
+                pair_steps += 1
+
+    avg_pair_steps = pair_steps / pairs
+
+    return avg_pair_steps
 
 
 if __name__ == "__main__":
 
-    print(group_search(20))
+    print(group_search(10))
 
-    # for i in range(100):
+    # step_avgs_1000 = []
+    #
+    # for i in range(1000):
+    #     print(i)
+    #     step_avgs_1000.append(random_search(1000))
+    #
+    # with open('random_search_dfs_1000', 'wb') as fp:
+    #     pickle.dump(step_avgs_1000, fp)
+
+    # with open('random_search_dfs_1000', 'rb') as fp:
+    #     step_avgs_1000 = pickle.load(fp)
+    #
+    # matplotlib.pyplot.hist(step_avgs_1000, 20, normed=1, facecolor='red', alpha=1)
+    # matplotlib.pyplot.show()
+
     #     result = random_search(100)
     #     with open('random_search_dfs_backtrack_100_' + str(i), 'wb') as fp:
     #         pickle.dump(result, fp)
