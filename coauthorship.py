@@ -25,17 +25,30 @@ def create_coauthorship_graph():
 
 if __name__ == "__main__":
 
-    PA_graph = nx.to_dict_of_lists(na3pa.make_PA_Graph(1486, 39))
-    nx_coauthorship_graph = nx.to_dict_of_lists(create_coauthorship_graph())
-    random_graph = nx.to_dict_of_lists(nx.erdos_renyi_graph(1486, 0.04))
-    group_graph = nx.to_dict_of_lists(nx_group_graph.create_group_graph(75, 20, 0.3, 0.033))
-    ws_graph = nx.to_dict_of_lists(nx_ws_graph.make_ws_graph(1486, 28, 0.5))
+    nx_coauthorship_graph = create_coauthorship_graph()
+    nx_random_graph = nx.erdos_renyi_graph(1559, 0.0337)
+    nx_PA_graph = na3pa.make_PA_Graph(1559, 36)
+    nx_group_graph = nx_group_graph.create_group_graph(75, 20, 0.3, 0.033)
+    nx_ws_graph = nx_ws_graph.make_ws_graph(1559, 26, 0.3)
 
-    coauthorship_graph = create_coauthorship_graph()
-    print(coauthorship_graph.number_of_nodes())
-    print(coauthorship_graph.number_of_edges())
+    print("coauthorship nodes: " + str(nx_coauthorship_graph.number_of_nodes()) + ", edges: " +
+          str(nx_coauthorship_graph.number_of_edges()))
+    print("random nodes: " + str(nx_random_graph.number_of_nodes()) + ", edges: " +
+          str(nx_random_graph.number_of_edges()))
+    print("PA nodes: " + str(nx_PA_graph.number_of_nodes()) + ", edges: " +
+          str(nx_PA_graph.number_of_edges()))
+    print("group nodes: " + str(nx_group_graph.number_of_nodes()) + ", edges: " +
+          str(nx_group_graph.number_of_edges()))
+    print("WS nodes: " + str(nx_ws_graph.number_of_nodes()) + ", edges: " +
+          str(nx_ws_graph.number_of_edges()))
 
-    graphs = [nx_coauthorship_graph, random_graph, PA_graph, group_graph, ws_graph]
+    coauthorship_graph = nx.to_dict_of_lists(nx_coauthorship_graph)
+    PA_graph = nx.to_dict_of_lists(nx_PA_graph)
+    random_graph = nx.to_dict_of_lists(nx_random_graph)
+    group_graph = nx.to_dict_of_lists(nx_group_graph)
+    ws_graph = nx.to_dict_of_lists(nx_ws_graph)
+
+    graphs = [coauthorship_graph, random_graph, PA_graph, group_graph, ws_graph]
 
     graph_4cycles = []
 
@@ -76,20 +89,6 @@ if __name__ == "__main__":
 
     with open('4cycles', 'wb') as fp:
         pickle.dump(graph_4cycles, fp)
-
-    ydata = [1 for i in range(num_samples)] + [2 for i in range(num_samples)] + [3 for i in range(num_samples)] + [4 for i in range(num_samples)] + \
-            [5 for i in range(num_samples)]
-
-    coauthorship = [graph_4cycles[0][k] for k in graph_4cycles[0]]
-    random = [graph_4cycles[1][k] for k in graph_4cycles[1]]
-    PA = [graph_4cycles[2][k] for k in graph_4cycles[2]]
-    group = [graph_4cycles[3][k] for k in graph_4cycles[3]]
-    WS = [graph_4cycles[4][k] for k in graph_4cycles[4]]
-    xdata = coauthorship + random + PA + group + WS
-    plt.ylim(0, 6)
-    plt.yticks((1, 2, 3, 4, 5), ('Coauthorship', 'Random', 'PA', 'Group', 'WS'))
-    plt.semilogx(xdata, ydata, marker='s', linestyle='None', color='r')
-    plt.savefig("4cycles.pdf")
 
     graph_5cycles = []
 
@@ -132,6 +131,29 @@ if __name__ == "__main__":
     with open('5cycles', 'wb') as fp:
         pickle.dump(graph_5cycles, fp)
 
+    with open('4cycles', 'rb') as fp:
+        graph_4cycles = pickle.load(fp)
+
+    ydata = [1 for i in range(num_samples)] + [2 for i in range(num_samples)] + [3 for i in range(num_samples)] + [4 for i in range(num_samples)] + \
+            [5 for i in range(num_samples)]
+
+    coauthorship = [graph_4cycles[0][k] for k in graph_4cycles[0]]
+    random = [graph_4cycles[1][k] for k in graph_4cycles[1]]
+    PA = [graph_4cycles[2][k] for k in graph_4cycles[2]]
+    group = [graph_4cycles[3][k] for k in graph_4cycles[3]]
+    WS = [graph_4cycles[4][k] for k in graph_4cycles[4]]
+    xdata = coauthorship + random + PA + group + WS
+    plt.figure()
+    plt.ylim(0, 6)
+    plt.yticks((1, 2, 3, 4, 5), ('Coauthorship', 'Random', 'PA', 'Group', 'WS'))
+    plt.semilogx(xdata, ydata, marker='s', linestyle='None', color='r')
+    plt.subplots_adjust(left=0.2)
+    plt.xlabel("Number of 4-cycles")
+    plt.savefig("4cycles.pdf")
+
+    with open('5cycles', 'rb') as fp:
+        graph_5cycles = pickle.load(fp)
+
     ydata = [1 for i in range(num_samples)] + [2 for i in range(num_samples)] + [3 for i in range(num_samples)] + [4 for i in range(num_samples)] + \
             [5 for i in range(num_samples)]
 
@@ -141,57 +163,10 @@ if __name__ == "__main__":
     group = [graph_5cycles[3][k] for k in graph_5cycles[3]]
     WS = [graph_5cycles[4][k] for k in graph_5cycles[4]]
     xdata = coauthorship + random + PA + group + WS
+    plt.figure()
     plt.ylim(0, 6)
     plt.yticks((1, 2, 3, 4, 5), ('Coauthorship', 'Random', 'PA', 'Group', 'WS'))
     plt.semilogx(xdata, ydata, marker='s', linestyle='None', color='r')
+    plt.subplots_adjust(left=0.2)
+    plt.xlabel("Number of 5-cycles")
     plt.savefig("5cycles.pdf")
-
-    # for vertex in vertices:
-    #     print(vertex)
-    #     count = 0
-    #     for idx1 in graph[vertex]:
-    #         neighbour1 = idx1
-    #         for idx2 in graph[vertex]:  # find all distinct pairs of neighbours of vertex
-    #             neighbour2 = idx2
-    #             if neighbour1 != neighbour2:
-    #                 for dist2_neighbour1 in graph[neighbour1]:  # look at neighbours of neighbour1
-    #                     if vertex != dist2_neighbour1:
-    #                         for dist2_neighbour2 in graph[neighbour2]:  # and neighbours of neighbour2
-    #                             if adjacency_matrix[dist2_neighbour1][
-    #                                 dist2_neighbour2] == 1 and vertex != dist2_neighbour2:  # see if they are adjacent
-    #                                 count += 1  # if so a 5-cycle has been found
-    #     cycle_dict[vertex] = count
-    #
-    # graph_5cycles.append(cycle_dict)
-
-
-
-    # five_cycle_dict = {}
-    #
-    # for vertex in nx_coauthorship_graph.nodes_iter():
-    #     five_cycle_dict[vertex] = 0
-    #     for neighbour in nx_coauthorship_graph.neighbors_iter(vertex):
-    #         for nn in nx_coauthorship_graph.neighbors_iter(neighbour):
-    #             for nnn in nx_coauthorship_graph.neighbors_iter(nn):
-    #                 for nnnn in nx_coauthorship_graph.neighbors_iter(nnn):
-    #                     if vertex in nx_coauthorship_graph.neighbors_iter(nnnn):
-    #                         five_cycle_dict[vertex] += 1
-    #
-    # print(five_cycle_dict)
-
-    # four_cycle_dict = {}
-    #
-    # # maybe look at making non-directed?
-    # for vertex in nx_coauthorship_graph.nodes_iter():
-    #     four_cycle_dict[vertex] = 0
-    #     for neighbour in nx_coauthorship_graph.neighbors_iter(vertex):
-    #         for nn in nx_coauthorship_graph.neighbors_iter(neighbour):
-    #             for nnn in nx_coauthorship_graph.neighbors_iter(nn):
-    #                 if vertex in nx_coauthorship_graph.neighbors_iter(nnn):
-    #                     four_cycle_dict[vertex] += 1
-    #
-    # print(four_cycle_dict)
-
-
-    #cycle_gen = nx.simple_cycles(nx_coauthorship_graph)
-    #print(list(cycle_gen))
